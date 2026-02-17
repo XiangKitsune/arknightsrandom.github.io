@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6★幹員抽取器</title>
+
+<style>
+body{
+    margin:0;
+    font-family:'Segoe UI',Arial, sans-serif;
+    background:linear-gradient(135deg,#0a0f1c,#16233a);
+    color:#d6f0ff;
+    text-align:center;
+}
+
+/* 標題 */
+h1{
+    margin:30px 0 10px;
+    font-size:2.2em;
+    letter-spacing:2px;
+    color:#66d9ff;
+}
+
+/* FB按鈕 */
+.fb-btn{
+    display:inline-block;
+    margin-left:12px;
+    padding:6px 12px;
+    font-size:0.5em;
+    background:#1877f2;
+    color:white;
+    text-decoration:none;
+    border-radius:6px;
+    border:1px solid #1877f2;
+    box-shadow:0 0 10px rgba(24,119,242,0.5);
+}
+
+.fb-btn:hover{
+    background:#145ccc;
+}
+
+/* 抽卡顯示區 */
+#operator{
+    margin:50px auto;
+    padding:30px;
+    width:80%;
+    max-width:600px;
+    font-size:2.2em;
+    font-weight:600;
+    color:#e6faff;
+    background:rgba(10,20,40,0.6);
+    border-radius:12px;
+    border:1px solid rgba(100,200,255,0.3);
+    box-shadow:0 0 25px rgba(63,191,255,0.3);
+    backdrop-filter: blur(6px);
+    transition:0.3s;
+}
+
+/* 抽到幹員動畫 */
+.flash{
+    animation:flash 0.4s ease;
+}
+
+@keyframes flash{
+    0%{transform:scale(0.9);opacity:0.5;}
+    100%{transform:scale(1);opacity:1;}
+}
+
+/* 按鈕 */
+button{
+    background:#0f1f35;
+    border:1px solid #3fbfff;
+    color:#9be7ff;
+    padding:10px 20px;
+    margin:8px;
+    cursor:pointer;
+    border-radius:8px;
+    transition:0.2s;
+    box-shadow:0 0 8px rgba(63,191,255,0.3);
+}
+
+button:hover{
+    background:#1b3e66;
+    transform:translateY(-2px);
+}
+
+/* 輸入 */
+input[type=number]{
+    width:70px;
+    background:#111;
+    color:#9be7ff;
+    border:1px solid #3fbfff;
+    padding:6px;
+    text-align:center;
+    border-radius:6px;
+}
+
+/* 面板 */
+.panel{
+    width:90%;
+    max-width:900px;
+    margin:20px auto;
+    background:#111827;
+    border:1px solid #2b4c7e;
+    border-radius:10px;
+    box-shadow:0 0 15px rgba(0,0,0,0.5);
+}
+
+.panel-header{
+    padding:12px;
+    cursor:pointer;
+    background:#0f1f35;
+    font-weight:bold;
+}
+
+.panel-content{
+    display:none;
+    padding:15px;
+    text-align:left;
+    max-height:300px;
+    overflow-y:auto;
+}
+
+.exclude-grid{
+    columns:3;
+    font-size:0.9em;
+}
+
+.history-item{
+    padding:4px 0;
+    border-bottom:1px solid #1e3a5f;
+}
+</style>
+</head>
+
+<body>
+
+<h1>
+6★ 幹員抽取器
+<a href="https://www.facebook.com/kyuumara/" target="_blank" class="fb-btn">作者主頁</a>
+</h1>
+
+<div id="operator">博士準備好了嗎？</div>
+
+<div>
+    <button onclick="drawOne()">單抽</button>
+    <button onclick="drawMulti()">連抽</button>
+    <input type="number" id="multiCount" value="10" min="1" max="12"> 位
+    <button onclick="resetAll()">重置</button>
+</div>
+
+<div id="count"></div>
+
+<div id="multiResult" style="width:90%;max-width:900px;margin:20px auto;padding:15px;background:#0b1526;border:1px solid #3fbfff;border-radius:10px;display:none;"></div>
+
+<div class="panel">
+    <div class="panel-header" onclick="togglePanel(this)">▼ 抽取紀錄</div>
+    <div class="panel-content" id="historyList">尚未抽取</div>
+</div>
+
+<div class="panel">
+    <div class="panel-header" onclick="togglePanel(this)">▼ 排除幹員設定</div>
+    <div class="panel-content">
+        <div style="font-size:0.85em;color:#9be7ff;margin-bottom:8px;">※ 此列表由台服最新到最舊排序</div>
+        <button onclick="selectAll(true)">全部排除</button>
+        <button onclick="selectAll(false)">全部取消</button>
+        <button onclick="applyExclusion()">套用設定</button>
+        <div class="exclude-grid" id="excludeList"></div>
+    </div>
+</div>
+
+<script>
+
+const sound = new Audio("https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3");
+sound.volume = 0.4;
+
+const operators = [
+"電弧","司霆驚蟄","酒神","新約能天使","信仰攪拌機","Mon3tr","死芒","隱德來希","餘","燭煌",
+"引星棘刺","荒蕪拉普蘭德","忍冬","弒君者","維娜·維多利亞","瑪露西爾","佩佩","娜仁圖亞","妮芙",
+"烏爾比安","維什戴爾","邏各斯","魔王","阿斯卡綸","艾拉","黍","左樂","萊伊","鐧","塑心",
+"薇薇安娜","止頌","赫德雷","滌火傑西卡","純燼艾雅法拉","琳瑯詩懷雅","提豐","聖約送葬人",
+"繆爾賽思","霍爾海雅","淬羽赫默","伊內絲","麒麟R夜刀","仇白","重岳","林","焰影葦草",
+"緘默德克薩斯","斥罪","白鐵","瑪恩納","百煉嘉維爾","鴻雪","多蘿西","黑鍵","歸溟幽靈鯊",
+"艾麗妮","流明","號角","菲亞梅塔","澄閃","令","老鯉","靈知","耀騎士臨光","焰尾","遠牙",
+"琴柳","假日威龍陳","水月","帕拉斯","卡涅利安","濁心斯卡蒂","凱爾希","歌蕾蒂婭","異客",
+"灰燼","夕","嵯峨","空弦","山","迷迭香","泥岩","瑕光","史爾特爾","森蚺","棘刺","鈴蘭",
+"早露","W","溫蒂","傀影","風笛","刻俄柏","年","煌","阿","莫斯提馬","麥哲倫","赫拉格",
+"黑","陳","斯卡蒂","銀灰","塞雷婭","星熊","夜鶯","閃靈","安潔莉娜","艾雅法拉","伊芙利特",
+"推進之王","能天使"
+];
+
+let excluded = new Set();
+let pool = [];
+let history = [];
+let drawCount = 0;
+
+function initExclude(){
+    const list = document.getElementById("excludeList");
+    operators.forEach(op=>{
+        list.innerHTML += `<label><input type="checkbox" value="${op}"> ${op}</label><br>`;
+    });
+}
+
+function applyExclusion(){
+    excluded.clear();
+    document.querySelectorAll("#excludeList input:checked").forEach(cb=>{
+        excluded.add(cb.value);
+    });
+    resetPool();
+}
+
+function selectAll(state){
+    document.querySelectorAll("#excludeList input").forEach(cb=>{
+        cb.checked = state;
+    });
+}
+
+function togglePanel(el){
+    const content = el.nextElementSibling;
+    content.style.display = content.style.display==="block" ? "none" : "block";
+}
+
+function resetPool(){
+    pool = operators.filter(op=>!excluded.has(op));
+    history = [];
+    drawCount = 0;
+    updateCount();
+    document.getElementById("historyList").innerHTML="尚未抽取";
+}
+
+function updateCount(){
+    document.getElementById("count").innerText =
+        `已抽取：${drawCount} ｜ 剩餘：${pool.length}`;
+}
+
+async function drawOne(){
+    if(pool.length===0){ alert("沒有可抽幹員"); return; }
+
+    sound.currentTime=0;
+    sound.play();
+
+    const i = Math.floor(Math.random()*pool.length);
+    const op = pool.splice(i,1)[0];
+
+    const box = document.getElementById("operator");
+    box.innerText = op;
+    box.classList.remove("flash");
+    void box.offsetWidth;
+    box.classList.add("flash");
+
+    history.push(op);
+    drawCount++;
+    updateCount();
+    updateHistory();
+
+    if(pool.length===0){
+        alert("🎉 已抽完全部可抽取的幹員！");
+    }
+}
+
+async function drawMulti(){
+    let num = parseInt(document.getElementById("multiCount").value)||1;
+    num = Math.min(num,12);
+
+    const results = [];
+    for(let i=0;i<num;i++){
+        if(pool.length===0) break;
+
+        sound.currentTime=0;
+        sound.play();
+
+        const idx = Math.floor(Math.random()*pool.length);
+        const op = pool.splice(idx,1)[0];
+
+        results.push(op);
+
+        const box = document.getElementById("operator");
+        box.innerText = op;
+        box.classList.remove("flash");
+        void box.offsetWidth;
+        box.classList.add("flash");
+
+        history.push(op);
+        drawCount++;
+        updateCount();
+        updateHistory();
+
+        await new Promise(r=>setTimeout(r,200));
+    }
+
+    if(results.length>0){
+        const area = document.getElementById("multiResult");
+        area.style.display = "block";
+        area.innerHTML = "<b>本次連抽結果：</b><br>" + results.join(" 、 ");
+    }
+
+    if(pool.length===0){
+        alert("🎉 已抽完全部可抽取的幹員！");
+    }
+}
+
+function updateHistory(){
+    const list = document.getElementById("historyList");
+    list.innerHTML="";
+    history.slice().reverse().forEach((op,i)=>{
+        list.innerHTML += `<div class="history-item">${history.length-i}. ${op}</div>`;
+    });
+}
+
+function resetAll(){
+    excluded.clear();
+    document.querySelectorAll("#excludeList input").forEach(cb=>cb.checked=false);
+    resetPool();
+    document.getElementById("operator").innerText="博士準備好了嗎？";
+}
+
+initExclude();
+resetPool();
+
+</script>
+</body>
+</html>
