@@ -370,6 +370,14 @@ function togglePanel(el){
 function showPage(id){
     document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
     document.getElementById(id).classList.add("active");
+
+    // 控制職業抽取按鈕顯示
+    const btn = document.getElementById("jobBtn");
+    if(id === "job"){
+        btn.style.display = "none";
+    }else{
+        btn.style.display = "block";
+    }
 }
 function resetAll(){
     excluded.clear(); localStorage.removeItem(LS_KEY);
