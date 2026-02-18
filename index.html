@@ -313,6 +313,9 @@ function resetAll(){
     document.querySelectorAll("#excludeList input").forEach(cb=>cb.checked=false);
     resetPool();
     document.getElementById("operator").innerText="博士準備好了嗎？";
+    const area = document.getElementById("multiResult");
+    area.style.display = "none";
+    area.innerHTML = "";
 }
 
 initExclude();
